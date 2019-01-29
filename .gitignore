@@ -1,0 +1,11 @@
+bin
+obj
+
+*.exe
+*.dll
+*.suo
+*.user
+*.obj
+*.pch
+*.pdb
+*.log
