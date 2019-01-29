@@ -1,5 +1,6 @@
 bin
 obj
+__MACOSX
 
 *.exe
 *.dll
@@ -9,3 +10,6 @@ obj
 *.pch
 *.pdb
 *.log
+*.o
+.DS_Store
+keygen

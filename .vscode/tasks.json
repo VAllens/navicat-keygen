@@ -1,0 +1,49 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "windows": {
+                "command": "g++",
+                "args": [
+                    "-Wall", "-std=c++11", 
+                    "-Wl,--subsystem,windows",
+                    "src/keygen.cpp",
+                    "src/activate.cpp",
+                    "src/patch.cpp",
+                    "src/patch3.cpp",
+                    "-Iinc", "-Llib/amd64", 
+                    "-llibui", "-llibeay32", "-lcapstone", 
+                    "-o", "${workspaceFolderBasename}"
+                ]
+            },
+            "osx": {
+                "command": "g++",
+                "args": [
+                    "-Wall", "-std=c++11",
+                    "-rpath", "@executable_path",
+                    "src/keygen.cpp",
+                    "src/activate.cpp",
+                    "src/patch.cpp",
+                    "src/patch3.cpp",
+                    "-Iinc", "-Lkeygen.app/Contents/MacOS", 
+                    "-lui", "-lcrypto", "-lcapstone",
+                    "-o", "keygen.app/Contents/MacOS/keygen"
+                ]
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}

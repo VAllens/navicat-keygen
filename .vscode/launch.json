@@ -1,0 +1,33 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build",
+            "externalConsole": true,
+            "windows": {
+                "MIMode": "gdb",
+                "program": "${workspaceFolder}/${workspaceFolderBasename}.exe",
+                "miDebuggerPath": "C:\\MinGW64\\bin\\gdb.exe",
+            },
+            "osx": {
+                "MIMode": "lldb",
+                "program": "${workspaceRoot}/keygen.app/Contents/MacOS/keygen"
+            },
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
