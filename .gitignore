@@ -9,3 +9,5 @@ obj
 *.pch
 *.pdb
 *.log
+*.sdf
+*.opensdf

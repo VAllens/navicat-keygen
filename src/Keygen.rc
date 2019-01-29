@@ -1,0 +1,169 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "Resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 中文(中华人民共和国) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDR_MAIN DIALOGEX 0, 0, 135, 140
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Navicat 注册机"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    GROUPBOX        "注册信息", IDC_STATIC, 7, 7, 120, 48
+    LTEXT           "名称", IDC_STATIC, 15, 20, 30, 13
+    EDITTEXT        IDC_NAME, 40, 18, 75, 14, ES_CENTER
+    LTEXT           "组织", IDC_STATIC, 15, 38, 30, 13
+    EDITTEXT        IDC_ORGANIZATION, 40, 35, 75, 14, ES_CENTER
+    GROUPBOX        "版本选择", IDC_STATIC, 7, 55, 120, 60
+    COMBOBOX        IDC_PRODUCT, 15, 66, 105, 14, CBS_DROPDOWNLIST | WS_VSCROLL
+    COMBOBOX        IDC_VERSION, 15, 81, 40, 14, CBS_DROPDOWNLIST
+    COMBOBOX        IDC_LANGUAGE, 60, 81, 60, 14, CBS_DROPDOWNLIST
+    EDITTEXT        IDC_SERIAL, 15, 96, 105, 14, ES_CENTER | ES_READONLY
+    PUSHBUTTON      "补丁", IDC_PATCH, 7, 120, 35, 15
+    PUSHBUTTON      "生成", IDC_GENERATE, 50, 120, 35, 15
+    PUSHBUTTON      "激活", IDC_ACTIVATE, 93, 120, 35, 15
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_ERROR               "发生了一个致命错误 (0x%x)"
+    IDS_PATCHED             "文件 %s 已经打过补丁"
+    IDS_NOTPATCH            "文件 %s 尚未补丁"
+    IDS_FORMNOTFOUND        "找不到 “手动激活” 窗口"
+    IDS_BLOCK               "是否屏蔽 Navicat 激活服务器？"
+    IDS_NOTNAVICAT          "文件 %s 不是 Navicat 主程序"
+    IDS_VERNOTMATCH         "文件 %s 版本不符"
+    IDS_BUSY                "补丁正在进行中，请稍后..."
+END
+
+#endif    // 中文(中华人民共和国) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// 英语(美国) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDR_MAIN DIALOGEX 0, 0, 135, 140
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Navicat Keygen"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    GROUPBOX        "Info", IDC_STATIC, 7, 7, 120, 48
+    LTEXT           "Name", IDC_STATIC, 15, 20, 30, 13
+    EDITTEXT        IDC_NAME, 40, 18, 75, 14, ES_CENTER
+    LTEXT           "Org", IDC_STATIC, 15, 38, 30, 13
+    EDITTEXT        IDC_ORGANIZATION, 40, 35, 75, 14, ES_CENTER
+    GROUPBOX        "Serial", IDC_STATIC, 7, 55, 120, 60
+    COMBOBOX        IDC_PRODUCT, 15, 66, 105, 14, CBS_DROPDOWNLIST | WS_VSCROLL
+    COMBOBOX        IDC_VERSION, 15, 81, 40, 14, CBS_DROPDOWNLIST
+    COMBOBOX        IDC_LANGUAGE, 60, 81, 60, 14, CBS_DROPDOWNLIST
+    EDITTEXT        IDC_SERIAL, 15, 96, 105, 14, ES_CENTER | ES_READONLY
+    PUSHBUTTON      "Patch", IDC_PATCH, 7, 120, 35, 15
+    PUSHBUTTON      "Key", IDC_GENERATE, 50, 120, 35, 15
+    PUSHBUTTON      "Activate", IDC_ACTIVATE, 93, 120, 35, 15
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_ERROR               "Oops, critical error happened (%d)"
+    IDS_PATCHED             "File %s has alreay patched"
+    IDS_NOTPATCH            "File %s has not patched yet"
+    IDS_FORMNOTFOUND        "Can't find manual activate form"
+    IDS_BLOCK               "Do you want to block Navicat activate server?"
+    IDS_NOTNAVICAT          "File %s is not valid"
+    IDS_VERNOTMATCH         "File %s version not match"
+    IDS_BUSY                "Patch is working, please wait a moment"
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+IDR_MAIN             ICON                    "Keygen.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RC_DATA
+//
+IDR_RSAKEY           RCDATA                  "Key.pem"
+
+#endif    // 英语(美国) resources
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "Resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
