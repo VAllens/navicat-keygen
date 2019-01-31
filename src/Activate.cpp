@@ -1,8 +1,8 @@
 ﻿#include "StdAfx.h"
 #include "MainDlg.h"
 #include "Patch.h"
+#include "Helper.h"
 
-#include <openssl/rsa.h>
 #include <openssl/des.h>
 
 static TCHAR table[] = TEXT("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567");
@@ -232,8 +232,15 @@ LRESULT CMainDlg::OnActive(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
     GetDlgItemText(IDC_ORGANIZATION, szOrg);
 
     // load key
+    HMODULE hModule = _Module.GetResourceInstance();
+    HRSRC hSrc = ::FindResource(hModule, MAKEINTRESOURCE(IDR_RSAKEY), RT_RCDATA);
+    HGLOBAL hRes = ::LoadResource(hModule, hSrc);
+    // 导入私钥
+    CHelpPtr<BIO> pBIO = BIO_new_mem_buf(::LockResource(hRes), SizeofResource(hModule, hSrc));
+    CHelpPtr<RSA> pRSA = PEM_read_bio_RSAPrivateKey(pBIO, NULL, NULL, NULL);
+    ::FreeResource(hRes);
+   
     HRESULT hr = S_OK;
-    RSA *pRSA = CPatch::LoadKey();
     // 生成许可文件
     if (nIndex == Navicat12)
     {
@@ -247,7 +254,6 @@ LRESULT CMainDlg::OnActive(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
     {
         hr = ExportLic(pRSA, szName, szOrg, szLic, m_hWnd);
     }
-    RSA_free(pRSA);
 
     if (SUCCEEDED(hr)) return S_OK;
     ::FormatMessage(FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM, NULL, hr, 0, szPath, _countof(szPath), NULL);

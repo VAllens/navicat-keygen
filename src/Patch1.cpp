@@ -50,7 +50,7 @@ HRESULT CPatch::Patch1(LPCSTR pData, int nLen)
     // cal patch magic
     CHeapPtr<BYTE> pBin;
     CAtlStringA pHex;
-    int nKey = strlen(pPublic);
+    int nKey = static_cast<int>(strlen(pPublic));
     int nHex = AtlHexEncodeGetRequiredLength(nKey);
     PSTR szHex = pHex.GetBufferSetLength(nHex);
 

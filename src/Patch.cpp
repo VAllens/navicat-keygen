@@ -1,9 +1,6 @@
 ﻿#include "StdAfx.h"
 #include "Patch.h"
-
-#include <openssl/rsa.h>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
+#include "Helper.h"
 
 #define IDR_PUBKEY TEXT("ACTIVATIONPUBKEY")
 
@@ -17,8 +14,23 @@ YyQ1Wt4Ot12lxf0wVIR5mcGN7XCXJRHOFHSf1gzXWabRSvmt1nrl7sW6cjxljuuQ\r\n\
 awIDAQAB\r\n\
 -----END PUBLIC KEY-----\r\n";
 
-HRESULT CPatch::Patch(LPCTSTR szPath, VS_FIXEDFILEINFO *pVer, PSTR pData, int nLen)
+
+HRESULT CPatch::Patch(LPCTSTR szPath, VS_FIXEDFILEINFO *pVer)
 {
+    // 导入私钥
+    CHelpPtr<BIO> pBIO = BIO_new(BIO_s_mem());
+
+    HMODULE hModule = _Module.GetResourceInstance();
+    HRSRC hSrc = ::FindResource(hModule, MAKEINTRESOURCE(IDR_RSAKEY), RT_RCDATA);
+    HGLOBAL hRes = ::LoadResource(hModule, hSrc);
+    BIO_write(pBIO, ::LockResource(hRes), SizeofResource(hModule, hSrc));
+    ::FreeResource(hRes);
+
+    CHelpPtr<RSA> pRSA = PEM_read_bio_RSAPrivateKey(pBIO, NULL, NULL, NULL);
+    PSTR pData = NULL;
+    PEM_write_bio_RSA_PUBKEY(pBIO, pRSA);
+    int nLen = BIO_get_mem_data(pBIO, &pData);
+  
     if (HIWORD(pVer->dwFileVersionMS) <= 0xB)
     {
         return Patch0(szPath, pData, nLen);
@@ -83,7 +95,7 @@ PIMAGE_SECTION_HEADER CPatch::Section(LPCSTR szName)
     return NULL;
 }
 
-PBYTE CPatch::RvaPointer(UINT64 uRva)
+PBYTE CPatch::RVA(UINT64 uRva)
 {
     WORD i = 0;
     for (; i < pINH->FileHeader.NumberOfSections - 1; i++)
@@ -98,42 +110,6 @@ PBYTE CPatch::RvaPointer(UINT64 uRva)
         return NULL;
     PBYTE pRaw = pView + pISN[i].PointerToRawData;
     return pRaw + uRva - pISN[i].VirtualAddress;
-}
-
-int CPatch::Search(LPCSTR szName, PBYTE pData, DWORD uSize)
-{
-    PIMAGE_SECTION_HEADER pISH = Section(szName);
-    if (!pISH) return 0;
-
-    CHAR imm[MAXBYTE * 2] = {};
-    int nHex = sizeof(imm);
-    AtlHexEncode(pData, uSize, imm, &nHex);
-
-    PBYTE pRaw = pView + pISH->PointerToRawData;
-    int nFound = 0;
-    for (DWORD i = 0; i < pISH->SizeOfRawData; ++i)
-    {
-        if (memcmp(pRaw + i, pData, uSize) == 0)
-        {
-            nFound++;
-            i += uSize;
-        }
-    }
-    return nFound;
-}
-
-RSA* CPatch::LoadKey()
-{
-    HMODULE hModule = _Module.GetResourceInstance();
-    HRSRC hSrc = ::FindResource(hModule, MAKEINTRESOURCE(IDR_RSAKEY), RT_RCDATA);
-    HGLOBAL hRes = ::LoadResource(hModule, hSrc);
-    // 导入私钥
-    BIO *pBIO = BIO_new_mem_buf(::LockResource(hRes), SizeofResource(hModule, hSrc));
-    RSA *pRSA = PEM_read_bio_RSAPrivateKey(pBIO, NULL, NULL, NULL);
-    BIO_free_all(pBIO);
-
-    ::FreeResource(hRes);
-    return pRSA;
 }
 
 int CPatch::TrimKey(LPCSTR pSrc, PSTR pDst, int nKey)

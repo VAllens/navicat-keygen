@@ -180,6 +180,7 @@
     <ResourceCompile Include="Keygen.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Helper.h" />
     <ClInclude Include="MainDlg.h" />
     <ClInclude Include="Patch.h" />
     <ClInclude Include="Resource.h" />

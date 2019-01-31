@@ -1,8 +1,6 @@
 #ifndef _PATCH_H_
 #define _PATCH_H_
 
-typedef struct rsa_st RSA;
-
 class CPatch
 {
 private:
@@ -12,20 +10,16 @@ private:
     HRESULT Patch3(LPCSTR pData, int nLen);
 
 public:
-    static RSA* LoadKey(); // load private rsa key
     static int TrimKey(LPCSTR pSrc, PSTR pDst, int nKey);
     static LPCSTR pPublic;
 
     HRESULT Load(LPCTSTR szPath);
-    HRESULT Patch(LPCTSTR szPath, VS_FIXEDFILEINFO *pVer, PSTR pData, int nLen);
+    HRESULT Patch(LPCTSTR szPath, VS_FIXEDFILEINFO *pVer);
 
     PIMAGE_SECTION_HEADER Section(LPCSTR szName);
-    PBYTE RvaPointer(UINT64 uRva);
+    PBYTE RVA(UINT64 uRva);
 
-    UINT64 ImageBase() { return pINH->OptionalHeader.ImageBase; }
-    int Search(LPCSTR szName, PBYTE pData, DWORD uSize);
-
-private:
+public:
     CAtlFile hFile;
     CAtlFileMapping<BYTE> pView;
     PIMAGE_NT_HEADERS pINH;

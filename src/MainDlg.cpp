@@ -2,10 +2,6 @@
 #include "MainDlg.h"
 #include "Patch.h"
 
-#include <openssl/rsa.h>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
-
 CMainDlg::CMainDlg() : hThread(NULL)
 {
 }
@@ -191,16 +187,8 @@ DWORD CALLBACK CMainDlg::ThreadPatch(LPVOID lpParam)
     bCopy = ::CopyFile(pDlg->szFile, szBackup, TRUE);
     {
         CPatch s;
-        PSTR pKey = NULL;
-        RSA *pRSA = CPatch::LoadKey();
-        BIO *pBIO = BIO_new(BIO_s_mem());
-        PEM_write_bio_RSA_PUBKEY(pBIO, pRSA);
-        int nKey = BIO_get_mem_data(pBIO, &pKey);
         // 更新主程序RSA公钥
-        hr = s.Patch(pDlg->szFile, pVersion, pKey, nKey);
-
-        if (pBIO) BIO_free_all(pBIO);
-        if (pRSA) RSA_free(pRSA);
+        hr = s.Patch(pDlg->szFile, pVersion);
     }
     if (bCopy && hr != S_OK) ::MoveFileEx(szBackup, pDlg->szFile, MOVEFILE_REPLACE_EXISTING);
 exit:
