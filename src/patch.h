@@ -2,22 +2,43 @@
 #define _PATCH_H_
 
 #include <platform.h>
-#include <map>
 #include <string>
+#include <map>
+
+#if defined(_WIN32)
+
+#define strcmpi stricmp
+#define sect_code ".text"
+#define sect_string ".rdata"
+
+#elif defined(__APPLE__)
+
+#define strcmpi strcasecmp
+#define sect_code "__TEXT"
+#define sect_string "__cstring"
+
+#endif
 
 class CPatch
 {
 public:
+    enum {
+        UNKNOWN,
+        I386,
+        AMD64
+    };
+public:
     bool Open(const char *path);
     void Close();
-    uint8_t* Rva(uint64_t rva);
-    // count string occurs in code section
-    int Search(const char *sec, void *p, uint32_t s) { return 0; }
-    static std::string TrimKey(const char *src);
 
+    int Patch2();
     int Patch3();
-    uint64_t FindCode(uint32_t hint, uint32_t range, 
-        const void *code, uint32_t size);
+   
+    uint8_t* Rva(uint64_t rva);
+    // find code block occurs in section
+    uint64_t Search(const char *name, const void *code, int s, int64_t off = 0);
+    // trim pem header
+    static std::string TrimKey(const char *src);
 
 private:
     void* pView;
@@ -29,10 +50,10 @@ private:
     long length;
 #endif
     std::map<uint64_t, const char*> sects;
-    static const char *public_key;
+    static const std::string public_key;
 public:
     CPatch();
-    ~CPatch();
+    ~CPatch() { Close(); }
 };
 
 #endif // _PATCH_H_

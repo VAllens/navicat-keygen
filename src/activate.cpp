@@ -1,8 +1,8 @@
 #include "keygen.h"
-#include <stdlib.h>
+#include "helper.h"
 
-#include <openssl/rsa.h>
 #include <openssl/des.h>
+#include <openssl/evp.h>
 
 #if defined(_WIN32)
 static char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -142,4 +142,50 @@ void CMainWnd::onKeyGen(uiButton *, void *data)
     serial[n++] = '\0';
 
     uiEntrySetText(pWnd->sn, serial);
+}
+
+void CMainWnd::onActive(uiButton *b, void *data)
+{
+    CMainWnd *pWnd = reinterpret_cast<CMainWnd*>(data);
+    char *lic = uiMultilineEntryText(pWnd->lic);
+    if (lic == NULL || !lic[0]) return;
+    // load private key
+    Cipher rsa;
+    int n = rsa.Load("./navicat.pem");
+    if (n < 0) return pWnd->ErrBox("failed open pem %d", n);
+    // decode base64
+    n = strlen(lic);
+    CAutoPtr<uint8_t> p = (uint8_t*)malloc(n * 2);
+    {
+        BIO *b64 = BIO_new(BIO_f_base64());
+        CAutoPtr<BIO> bmem = BIO_push(b64, BIO_new_mem_buf(lic, n));
+        if (!strchr(lic, '\n')) BIO_set_flags(bmem, BIO_FLAGS_BASE64_NO_NL);
+        n = BIO_read(bmem, p, n);
+        if (n <= 0) return pWnd->ErrBox("failed decode request code %d", n);
+        n = RSA_private_decrypt(n, p, p, rsa, RSA_PKCS1_PADDING);
+        if (n <= 0) return pWnd->ErrBox("failed decrypt request code %d", n);
+        p[n] = 0;
+    }
+
+    char *s = strstr(p.Get<char>(), "}");
+    if (!s) return pWnd->ErrBox("request %s", p.Get<char>());
+    printf("request code %s\n", p.Get<char>());
+    // generate result
+    n = sprintf(s, ",\"N\":\"%s\", \"O\":\"%s\", \"T\":%d }", 
+        uiEntryText(pWnd->name), uiEntryText(pWnd->org), (int)time(NULL));
+    n += s - p.Get<char>();
+
+    // encrypt request code
+    n = RSA_private_encrypt(n, p, p, rsa, RSA_PKCS1_PADDING);
+    if (n <= 0) return pWnd->ErrBox("failed encrypt request code");
+    BIO *bmem = BIO_new(BIO_s_mem());
+    CAutoPtr<BIO> b64 = BIO_push(BIO_new(BIO_f_base64()), bmem);
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    if (!BIO_write(b64, p, n) || !BIO_flush(b64)) 
+        return pWnd->ErrBox("failed encode request code");
+    n = BIO_get_mem_data(bmem, &lic);
+    lic[n] = 0;   
+
+    printf("request %d code %s\n", n, lic);
+    uiMultilineEntrySetText(pWnd->resp, lic);
 }

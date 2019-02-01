@@ -11,5 +11,7 @@ __MACOSX
 *.pdb
 *.log
 *.o
+*.pem
 .DS_Store
 keygen
+Info.plist

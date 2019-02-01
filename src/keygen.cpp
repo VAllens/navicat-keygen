@@ -1,33 +1,24 @@
 #include "keygen.h"
 #include "patch.h"
+#include "helper.h"
 
 void CMainWnd::Init()
 {
     w = uiNewWindow("Navicat Keygen", 135, 140, 0);
-    uiWindowSetMargined(w, 1);
     uiWindowOnClosing(w, onClosing, NULL);
 
-    uiBox *b = uiNewVerticalBox();
-    uiBoxSetPadded(b, 1);
-    uiWindowSetChild(w, uiControl(b));
+    uiTab *tab = uiNewTab();
+	uiWindowSetChild(w, uiControl(tab));
 
+    uiBox *b;
     uiBox *c;
     uiGroup *g;
 
-    // register group
-    name = uiNewEntry();
-    org = uiNewEntry();
-
-    c = uiNewVerticalBox();
-    uiBoxSetPadded(c, 1);
-    uiBoxAppend(c, uiControl(name), 0);
-    uiBoxAppend(c, uiControl(org), 0);
-
-    g = uiNewGroup("register");
-    uiGroupSetMargined(g, 2);
-    uiGroupSetChild(g, uiControl(c));
-    uiBoxAppend(b, uiControl(g), 0);
-
+    b = uiNewVerticalBox();
+    uiBoxSetPadded(b, 1);
+    uiTabAppend(tab, "Keygen", uiControl(b));
+	uiTabSetMargined(tab, 0, 1);
+   
     // sn group
     c = uiNewVerticalBox();
     uiBoxSetPadded(c, 1);
@@ -77,31 +68,66 @@ void CMainWnd::Init()
     uiButtonOnClicked(btn, onPatch, this);
     uiBoxAppend(b, uiControl(btn), 0);
 
+    b = uiNewVerticalBox();
+    uiBoxSetPadded(b, 1);
+    uiTabAppend(tab, "Activate", uiControl(b));
+	uiTabSetMargined(tab, 1, 1);
+
+    // register group
+    name = uiNewEntry();
+#if defined(_WIN32)
+    uiEntrySetText(name, getenv("USERNAME"));
+#elif defined(__APPLE__)
+    uiEntrySetText(name, getenv("USER"));
+#endif
+    org = uiNewEntry();
+
+    c = uiNewVerticalBox();
+    uiBoxSetPadded(c, 1);
+    uiBoxAppend(c, uiControl(name), 0);
+    uiBoxAppend(c, uiControl(org), 0);
+
+    g = uiNewGroup("register");
+    uiGroupSetMargined(g, 2);
+    uiGroupSetChild(g, uiControl(c));
+    uiBoxAppend(b, uiControl(g), 0);
+
+    lic = uiNewMultilineEntry();
+    uiBoxAppend(b, uiControl(lic), 4);
+    resp = uiNewMultilineEntry();
+    uiMultilineEntrySetReadOnly(resp, 1);
+    uiBoxAppend(b, uiControl(resp), 4);
+
+    btn = uiNewButton("Active");
+    uiButtonOnClicked(btn, onActive, this);
+    uiBoxAppend(b, uiControl(btn), 0);
+
     uiControlShow(uiControl(w));
+}
+
+void CMainWnd::ErrBox(const char *format, ...)
+{
+    char m[260] = {};
+    va_list args; 
+    va_start(args, format);
+    vsnprintf(m, sizeof(m), format, args);
+    va_end(args);
+
+    uiMsgBoxError(w, uiWindowTitle(w), m);
 }
 
 void CMainWnd::onPatch(uiButton *b, void *data)
 {
     CMainWnd *pWnd = reinterpret_cast<CMainWnd*>(data);
-    const char *pPath = uiOpenFile(pWnd->w);
-    if (!pPath) return;
+    char* path = uiOpenFile(pWnd->w);
+    if (!path) return;
 
     CPatch s;
-    const char *title = uiWindowTitle(pWnd->w);
-    if (!s.Open(pPath))
-    {
-        uiMsgBoxError(pWnd->w, title, "open execute failed");
-        return;
-    }
+    if (!s.Open(path)) return pWnd->ErrBox("open execute failed");
     int r = s.Patch3();
-    if (r < 0)
-    {
-        char msg[16] = {};
-        sprintf(msg, "patch failed %d", r);
-        uiMsgBoxError(pWnd->w, title, msg);
-        return;
-    }
-    uiMsgBox(pWnd->w, title, "patch success");
+    if (r < 0) return pWnd->ErrBox("patch failed %d", r);
+    
+    uiMsgBox(pWnd->w, uiWindowTitle(pWnd->w), "patch success");
 }
 
 int CMainWnd::onClosing(uiWindow *, void *)
@@ -109,6 +135,8 @@ int CMainWnd::onClosing(uiWindow *, void *)
     uiQuit();
     return 1;
 }
+
+#include <openssl/bio.h>
 
 int main()
 {

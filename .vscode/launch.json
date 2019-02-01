@@ -14,7 +14,7 @@
             "externalConsole": true,
             "windows": {
                 "MIMode": "gdb",
-                "program": "${workspaceFolder}/${workspaceFolderBasename}.exe",
+                "program": "${workspaceFolder}/bin/keygen.exe",
                 "miDebuggerPath": "C:\\MinGW64\\bin\\gdb.exe",
             },
             "osx": {

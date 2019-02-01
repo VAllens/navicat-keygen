@@ -9,25 +9,26 @@
             "windows": {
                 "command": "g++",
                 "args": [
-                    "-Wall", "-std=c++11", 
-                    "-Wl,--subsystem,windows",
+                    "-Wall", "-std=c++11", "-g",
                     "src/keygen.cpp",
                     "src/activate.cpp",
                     "src/patch.cpp",
+                    "src/patch2.cpp",
                     "src/patch3.cpp",
                     "-Iinc", "-Llib/amd64", 
                     "-llibui", "-llibeay32", "-lcapstone", 
-                    "-o", "${workspaceFolderBasename}"
+                    "-o", "bin/keygen"
                 ]
             },
             "osx": {
                 "command": "g++",
                 "args": [
-                    "-Wall", "-std=c++11",
+                    "-Wall", "-std=c++11", "-g",
                     "-rpath", "@executable_path",
                     "src/keygen.cpp",
                     "src/activate.cpp",
                     "src/patch.cpp",
+                    "src/patch2.cpp",
                     "src/patch3.cpp",
                     "-Iinc", "-Lkeygen.app/Contents/MacOS", 
                     "-lui", "-lcrypto", "-lcapstone",

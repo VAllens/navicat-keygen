@@ -3,12 +3,6 @@
 #include <string.h>
 #include <capstone/capstone.h>
 
-#if defined(_WIN32)
-#define strcmpi stricmp
-#else
-#define strcmpi strcasecmp
-#endif
-
 typedef struct 
 {
     uint64_t rip;
@@ -73,7 +67,7 @@ void FindPatch(CPatch *p, csh h, cs_ctx& ctx, cs_patch* patch = NULL)
             printf("%llx %s\t%s, %.*s\n", insn->address, insn->mnemonic, insn->op_str, prev.length, prev.patch);
 
             // Judge string to patch is refer by other code
-            if (prev.replace && p->Search(".text", insn->bytes, insn->size) > 1)
+            if (prev.replace && p->Search(sect_code, insn->bytes, insn->size) > 0)
             {
                 prev.patch = const_cast<uint8_t*>(prev.ptr) +
                     insn->detail->x86.encoding.imm_offset;
@@ -248,39 +242,16 @@ bool CheckMatch_amd64(CPatch *p, cs_insn* insn, cs_ctx& ctx)
     return true;
 }
 
-// Brute-force search, str_s should be 1 or 2
-/*static off_t SearchString(uint8_t* p, size_t s, const cs_ctx& ctx)
-{
-    size_t j;
-    for (size_t i = 0; i < s; i++) {
-        if (p[i] == ctx.origin[0]) {
-            bool match = true;
-            for (j = 1; j < ctx.replace[j] != '\x00'; j++) {
-                if (p[i + j] != ctx.origin[j]) {
-                    match = false;
-                    break;
-                }
-            }
-            if (match && p[i + j] == '\x00')
-                return static_cast<off_t>(i);
-        }    
-    }
-    return -1;
-}*/
-
 int CPatch::Patch3()
 {
-    // 48 8D 35 EF 74 E0 01
-    std::string key = TrimKey(public_key);
+    std::string key = TrimKey(public_key.c_str());
     cs_ctx ctx = { 0, NULL, 0xcd03, key.c_str() };
-
 #if defined(_WIN32)
     static const uint8_t code[] = {
         0x40, 0x55,                                         // push    rbp
         0x48, 0x8D, 0xAC, 0x24, 0x70, 0xBC, 0xFF, 0xFF,     // lea     rbp, [rsp-4390h]
         0xB8, 0x90, 0x44, 0x00, 0x00                        // mov     eax, 4490h
     };
-    ctx.rip = FindCode(0x6b67424e, 0x250, code, sizeof(code));
 #elif defined(__APPLE__)
     static const uint8_t code[] = {
         0x55,                 // push rbp
@@ -288,8 +259,9 @@ int CPatch::Patch3()
         0x41, 0x57,           // push r15
         0x41, 0x56            // push r14
     };
-    ctx.rip = FindCode(0x1e074ef, 0x250, code, sizeof(code));
+    // 48 8D 35 EF 74 E0 01
 #endif
+    ctx.rip = Search(sect_code, code, sizeof(code));
     printf("find offset %llx\n", ctx.rip);
     if (!ctx.rip) return -2;
 

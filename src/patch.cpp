@@ -1,6 +1,6 @@
 #include "patch.h"
 
-const char * CPatch::public_key = "-----BEGIN PUBLIC KEY-----\r\n\
+const std::string CPatch::public_key = "-----BEGIN PUBLIC KEY-----\r\n\
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw1dqF3SkCaAAmMzs889I\r\n\
 qdW9M2dIdh3jG9yPcmLnmJiGpBF4E9VHSMGe8oPAy2kJDmdNt4BcEygvssEfginv\r\n\
 a5t5jm352UAoDosUJkTXGQhpAWMF4fBmBpO3EedG62rOsqMBgmSdAyxCSPBRJIOF\r\n\
@@ -11,35 +11,15 @@ awIDAQAB\r\n\
 -----END PUBLIC KEY-----\r\n";
 
 #if defined(_WIN32)
+
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 CPatch::CPatch() : pView(NULL),
 hFile(NULL), hMapping(NULL)
 {
 }
-#elif defined(__APPLE__)
-#include <unistd.h>
-#include <fcntl.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-
-#include <mach-o/loader.h>
-
-static void *_invalid = reinterpret_cast<void*>(-1);
-
-CPatch::CPatch() : pView(_invalid),
-fd(-1), length(0)
-{
-}
-#endif
-
-CPatch::~CPatch()
-{
-}
-
-#if defined(_WIN32)
 bool CPatch::Open(const char* pPath)
 {
     hFile = ::CreateFile(pPath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, 
@@ -84,27 +64,43 @@ uint8_t* CPatch::Rva(uint64_t rva)
     return p + rva - sec->VirtualAddress;
 }
 
-uint64_t CPatch::FindCode(uint32_t hint, uint32_t range, const void *code, uint32_t size)
+uint64_t CPatch::Search(const char *name, const void *code, int s, int64_t off)
 {
     PIMAGE_SECTION_HEADER sec = NULL;
     for (auto i = sects.begin(); i != sects.end(); i++)
-        if (_strcmpi(".text", i->second) == 0)
+    {
+        if (strcmpi(name, i->second) == 0)
         {
             sec = (PIMAGE_SECTION_HEADER)(i->second);
             break;
         }
-    if (!sec) return -2;
+    }
+    if (!sec) return 0;
 
     uint8_t* p = reinterpret_cast<uint8_t*>(pView) + sec->PointerToRawData;
-    for (uint32_t i = 0; i < sec->SizeOfRawData; ++i)
-        if (*(uint32_t*)(p + i) == hint)
-            for (uint32_t j = i - range; j < i; ++j)
-                if (memcmp(p + j, code, size) == 0)
-                    return sec->VirtualAddress + j;
-    return -1;
+    for (uint32_t i = off; i < sec->SizeOfRawData; ++i)
+        if (memcmp(p + i, code, s) == 0)
+            return sec->VirtualAddress + i;
+    return 0;
 }
 
 #elif defined(__APPLE__)
+
+#include <unistd.h>
+#include <fcntl.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+
+#include <mach-o/loader.h>
+
+static void *_invalid = reinterpret_cast<void*>(-1);
+
+CPatch::CPatch() : pView(_invalid),
+fd(-1), length(0)
+{
+}
 
 bool CPatch::Open(const char* pPath)
 {
@@ -155,28 +151,26 @@ uint8_t* CPatch::Rva(uint64_t rva)
     return p + rva - sec->addr;
 }
 
-uint64_t CPatch::FindCode(uint32_t hint, uint32_t range, const void *code, uint32_t size)
+uint64_t CPatch::Search(const char *name, const void *code, int s, int64_t off)
 {
-    section_64 *sec = NULL;
+    section_64 *sec = sec = NULL;
     for (auto i = sects.begin(); i != sects.end(); i++)
-        if (strcasecmp(SECT_TEXT, i->second) == 0)
+    {
+        if (strcasecmp(name, i->second) == 0)
         {
             sec = (section_64 *)(i->second);
             break;
         }
-    if (!sec) return -2;
-
-    printf("section (%s) offset 0x%x addr 0x%llx size 0x%llx => %llx\n", 
-        sec->sectname, sec->offset, sec->addr, sec->size, sec->addr - sec->offset);
+    }
+    if (!sec) return 0;
 
     uint8_t* p = reinterpret_cast<uint8_t*>(pView) + sec->offset;
-    for (uint32_t i = 0; i < sec->size; ++i)
-        if (*(uint32_t*)(p + i) == hint)
-            for (uint32_t j = i - range; j < i; ++j)
-                if (memcmp(p + j, code, size) == 0)
-                    return sec->addr + j;
-    return -1;
+    for (uint32_t i = off; i < sec->size; ++i)
+        if (memcmp(p + i, code, s) == 0)
+            return sec->addr + i;
+    return 0;
 }
+
 #endif
 
 std::string CPatch::TrimKey(const char *src)
