@@ -151,7 +151,7 @@ void CMainWnd::onActive(uiButton *b, void *data)
     if (lic == NULL || !lic[0]) return;
     // load private key
     Cipher rsa;
-    int n = rsa.Load("./navicat.pem");
+    int n = rsa.Load("navicat.pem");
     if (n < 0) return pWnd->ErrBox("failed open pem %d", n);
     // decode base64
     n = strlen(lic);

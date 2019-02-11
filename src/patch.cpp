@@ -42,7 +42,10 @@ bool CPatch::Open(const char* pPath)
     PIMAGE_SECTION_HEADER pISN = reinterpret_cast<PIMAGE_SECTION_HEADER>(p +
         sizeof(pINH->Signature) + sizeof(pINH->FileHeader) + pINH->FileHeader.SizeOfOptionalHeader);
     for (WORD i = 0; i < pINH->FileHeader.NumberOfSections; i++, pISN++)
-        sects[pISN->VirtualAddress] = (char *)pISN->Name;
+        sects[pISN->VirtualAddress] = sec_ctx{ reinterpret_cast<char*>(pISN->Name), 
+            static_cast<uint64_t>(pISN->VirtualAddress), 
+            reinterpret_cast<uint8_t*>(pIDH) + pISN->PointerToRawData, 
+            static_cast<size_t>(pISN->SizeOfRawData) };
     return true;
 }
 
@@ -51,37 +54,6 @@ void CPatch::Close()
     if (pView != NULL) ::UnmapViewOfFile(pView);
     if (hMapping != NULL) ::CloseHandle(hMapping);
     if (hFile != NULL) ::CloseHandle(hFile);
-}
-
-uint8_t* CPatch::Rva(uint64_t rva) 
-{
-    auto v = sects.lower_bound(rva);
-    if (sects.end() == v) return NULL;
-    if (v->first != rva) --v;
-
-    PIMAGE_SECTION_HEADER sec = (PIMAGE_SECTION_HEADER)(v->second);
-    uint8_t *p = reinterpret_cast<uint8_t*>(pView) + sec->PointerToRawData;
-    return p + rva - sec->VirtualAddress;
-}
-
-uint64_t CPatch::Search(const char *name, const void *code, int s, int64_t off)
-{
-    PIMAGE_SECTION_HEADER sec = NULL;
-    for (auto i = sects.begin(); i != sects.end(); i++)
-    {
-        if (strcmpi(name, i->second) == 0)
-        {
-            sec = (PIMAGE_SECTION_HEADER)(i->second);
-            break;
-        }
-    }
-    if (!sec) return 0;
-
-    uint8_t* p = reinterpret_cast<uint8_t*>(pView) + sec->PointerToRawData;
-    for (uint32_t i = off; i < sec->SizeOfRawData; ++i)
-        if (memcmp(p + i, code, s) == 0)
-            return sec->VirtualAddress + i;
-    return 0;
 }
 
 #elif defined(__APPLE__)
@@ -117,18 +89,27 @@ bool CPatch::Open(const char* pPath)
     mach_header_64 *mh = (mach_header_64 *)pView;
     if (mh->magic != MH_MAGIC_64) return false;
 
-    uint8_t *p = reinterpret_cast<uint8_t*>(mh) + sizeof(mach_header_64);
+    uint8_t *p = reinterpret_cast<uint8_t*>(mh + 1);
     for (uint32_t i = 0; i < mh->ncmds; i++)
     {
-        load_command *lc = (load_command *)p;
+        load_command *lc = reinterpret_cast<load_command*>(p);
         if (lc->cmd == LC_SEGMENT_64)
         {
-            segment_command_64 *sc = (segment_command_64 *)p;
+            segment_command_64 *sc = reinterpret_cast<segment_command_64*>(p);
             // printf("segment (%s) offset 0x%llx size 0x%llx nsec %d\n", sc->segname, sc->fileoff, sc->filesize, sc->nsects);
-            section_64 *sec = (section_64 *)(p + sizeof(segment_command_64));
+            section_64 *sec = reinterpret_cast<section_64*>(sc + 1);
             for (uint32_t j = 0; j < sc->nsects; j++, sec++)
-                sects[sec->addr] = sec->sectname;
+            {
+                sects[sec->addr] = sec_ctx{ sec->sectname, sec->addr, 
+                    reinterpret_cast<uint8_t*>(mh) + sec->offset, sec->size };
+                printf("segment %s sect %s => 0x%.8llx 0x%llx\n", sc->segname, sec->sectname, sec->addr, sec->size);
+            }
         }
+        else if (lc->cmd == LC_DYLD_INFO_ONLY)
+        {
+            dyld_info_command *dic = reinterpret_cast<dyld_info_command*>(p);
+            dyld = reinterpret_cast<uint8_t*>(mh) + dic->lazy_bind_off;
+        }   
         p += lc->cmdsize;
     }
     return true;
@@ -140,38 +121,34 @@ void CPatch::Close()
     if (fd > 0) close(fd);
 }
 
+#endif
+
 uint8_t* CPatch::Rva(uint64_t rva) 
 {
     auto v = sects.lower_bound(rva);
     if (sects.end() == v) return NULL;
     if (v->first != rva) --v;
+    return const_cast<uint8_t*>(v->second.ptr) + 
+        rva - v->second.rip;
+}
 
-    section_64 *sec = (section_64 *)(v->second);
-    uint8_t *p = reinterpret_cast<uint8_t*>(pView) + sec->offset;
-    return p + rva - sec->addr;
+CPatch::sec_ctx CPatch::Section(const char *name)
+{
+    for (auto it = sects.begin(); it != sects.end(); it++)
+        if (strcmpi(name, it->second.name) == 0)
+           return it->second;
+    static sec_ctx zero = {};
+    return zero;
 }
 
 uint64_t CPatch::Search(const char *name, const void *code, int s, int64_t off)
 {
-    section_64 *sec = sec = NULL;
-    for (auto i = sects.begin(); i != sects.end(); i++)
-    {
-        if (strcasecmp(name, i->second) == 0)
-        {
-            sec = (section_64 *)(i->second);
-            break;
-        }
-    }
-    if (!sec) return 0;
-
-    uint8_t* p = reinterpret_cast<uint8_t*>(pView) + sec->offset;
-    for (uint32_t i = off; i < sec->size; ++i)
-        if (memcmp(p + i, code, s) == 0)
-            return sec->addr + i;
+    sec_ctx sec = Section(name);
+    for (uint32_t i = off; i < sec.size; ++i)
+        if (memcmp(sec.ptr + i, code, s) == 0)
+            return sec.rip + i;
     return 0;
 }
-
-#endif
 
 std::string CPatch::TrimKey(const char *src)
 {

@@ -31,7 +31,7 @@
                     "src/patch2.cpp",
                     "src/patch3.cpp",
                     "-Iinc", "-Lkeygen.app/Contents/MacOS", 
-                    "-lui", "-lcrypto", "-lcapstone",
+                    "-lui", "-lcrypto", "-lcapstone", "-lkeystone",
                     "-o", "keygen.app/Contents/MacOS/keygen"
                 ]
             },

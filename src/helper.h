@@ -20,16 +20,18 @@ public:
     CAutoPtr(T *p) : pT(p) {}
     ~CAutoPtr() { if (pT != NULL) CAutoPtrTrait<T>::Close(pT); }
     operator T*() { return pT; }
+    T** operator &() { return &pT; }
+    T* operator ->() { return pT; }
     template <typename N> N *Get() { return reinterpret_cast<N*>(pT); }
 protected:
     T *pT;
 };
 
-#define DECLARE_TRAIT(t, f) template <>\
+#define DECLARE_TRAIT(t, f, ...) template <>\
 class CAutoPtrTrait<t>\
 {\
 public:\
-    static void Close(t *p) { f(p); }\
+    static void Close(t *p) { f(p, ##__VA_ARGS__); }\
 };
 
 DECLARE_TRAIT(BIO, BIO_free_all);

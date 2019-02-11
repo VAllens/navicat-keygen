@@ -1,5 +1,6 @@
 #include "patch.h"
 #include "helper.h"
+#include <vector>
 
 #if defined(_WIN32)
 
@@ -11,8 +12,6 @@ int CPatch::Patch2()
 }
 
 #elif defined(__APPLE__)
-
-#include <vector>
 
 int CPatch::Patch2()
 {

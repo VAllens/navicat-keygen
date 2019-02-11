@@ -14,7 +14,7 @@
 #elif defined(__APPLE__)
 
 #define strcmpi strcasecmp
-#define sect_code "__TEXT"
+#define sect_code "__text"
 #define sect_string "__cstring"
 
 #endif
@@ -22,6 +22,14 @@
 class CPatch
 {
 public:
+    typedef struct 
+    {
+        const char *name;
+        uint64_t rip;
+        const uint8_t *ptr;
+        size_t size;
+    } sec_ctx;
+
     enum {
         UNKNOWN,
         I386,
@@ -35,12 +43,16 @@ public:
     int Patch3();
    
     uint8_t* Rva(uint64_t rva);
+    sec_ctx Section(const char *name);
     // find code block occurs in section
     uint64_t Search(const char *name, const void *code, int s, int64_t off = 0);
     // trim pem header
     static std::string TrimKey(const char *src);
 
 private:
+    std::map<uint64_t, sec_ctx> sects;
+    static const std::string public_key;
+
     void* pView;
 #if defined(_WIN32)
     void *hFile;
@@ -48,9 +60,9 @@ private:
 #else
     int fd;
     long length;
+public:
+    uint8_t *dyld;
 #endif
-    std::map<uint64_t, const char*> sects;
-    static const std::string public_key;
 public:
     CPatch();
     ~CPatch() { Close(); }
