@@ -186,17 +186,17 @@ bool CheckPatch_amd64(CPatch *p, cs_insn* insn, cs_ctx& ctx)
     return false;   
 }
 
-int CPatch::Patch3()
+int CPatch::Patch3(char *key, int n)
 {
-    std::string key = TrimKey(public_key.c_str());
-    cs_ctx ctx = { 0, NULL, 0xcd03, key.c_str() };
+    std::string pub = TrimKey(public_key.c_str());
+    cs_ctx ctx = { 0, NULL, 0xcd03, pub.c_str() };
     static const uint8_t code[] = {
         0x40, 0x55,                                         // push    rbp
         0x48, 0x8D, 0xAC, 0x24, 0x70, 0xBC, 0xFF, 0xFF,     // lea     rbp, [rsp-4390h]
         0xB8, 0x90, 0x44, 0x00, 0x00                        // mov     eax, 4490h
     };
     ctx.rip = Search(sect_code, code, sizeof(code));
-    printf("find offset 0x%.8llx\n", ctx.rip);
+    printf("patch3 find offset 0x%.8llx\n", ctx.rip);
     if (!ctx.rip) return -2;
 
     ctx.ptr = Rva(ctx.rip);
@@ -292,7 +292,7 @@ const char patch3magic[] =
     "kCQa4leutETpKLJ2bYaOYBdoiBFOwvf36YaSuRoY4SP2x1pWOwGFTg"
     "d90J2uYyCqUa3Q3iX52iigT4EKL2vJKdJ";
 
-int CPatch::Patch3()
+int CPatch::Patch3(char *key, int n)
 {
     static const uint8_t code[] = {
         0x55,                 // push rbp
@@ -302,7 +302,7 @@ int CPatch::Patch3()
         0x53                  // push rbx
     };
     uint64_t func_rva = Search(sect_code, code, sizeof(code));
-    printf("find offset 0x%.8llx\n", func_rva);
+    printf("patch3 find offset 0x%.8llx\n", func_rva);
     if (!func_rva) return -2;
 
     uint64_t key_rva = Search("__const", patch3magic, sizeof(patch3magic));

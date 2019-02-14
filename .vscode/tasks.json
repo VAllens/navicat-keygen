@@ -12,6 +12,7 @@
                     "-Wall", "-std=c++11", "-g",
                     "src/keygen.cpp",
                     "src/activate.cpp",
+                    "src/helper.cpp",
                     "src/patch.cpp",
                     "src/patch2.cpp",
                     "src/patch3.cpp",
@@ -27,11 +28,13 @@
                     "-rpath", "@executable_path",
                     "src/keygen.cpp",
                     "src/activate.cpp",
+                    "src/helper.mm",
                     "src/patch.cpp",
                     "src/patch2.cpp",
                     "src/patch3.cpp",
                     "-Iinc", "-Lkeygen.app/Contents/MacOS", 
                     "-lui", "-lcrypto", "-lcapstone", "-lkeystone",
+                    "-framework", "Foundation",
                     "-o", "keygen.app/Contents/MacOS/keygen"
                 ]
             },

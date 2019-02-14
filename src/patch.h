@@ -39,8 +39,8 @@ public:
     bool Open(const char *path);
     void Close();
 
-    int Patch2();
-    int Patch3();
+    int Patch2(char *key, int n);
+    int Patch3(char *key, int n);
    
     uint8_t* Rva(uint64_t rva);
     sec_ctx Section(const char *name);

@@ -122,11 +122,19 @@ void CMainWnd::onPatch(uiButton *b, void *data)
     char* path = uiOpenFile(pWnd->w);
     if (!path) return;
 
+    CAutoPtr<RSA> rsa = LoadRSA();
+    if (!rsa) return pWnd->ErrBox("failed load rsa key");
+
+    CAutoPtr<BIO> pb = BIO_new(BIO_s_mem());
+    if (!PEM_write_bio_RSA_PUBKEY(pb, rsa)) 
+        return pWnd->ErrBox("failed parse rsa key");
+    char *key = NULL;
+    int n = BIO_get_mem_data(pb, &key);
+
     CPatch s;
     if (!s.Open(path)) return pWnd->ErrBox("open execute failed");
-    int r = s.Patch3();
-    if (r < 0) return pWnd->ErrBox("patch failed %d", r);
-    
+    n = s.Patch3(key, n);
+    if (n < 0) return pWnd->ErrBox("patch failed %d", n);
     uiMsgBox(pWnd->w, uiWindowTitle(pWnd->w), "patch success");
 }
 
@@ -135,8 +143,6 @@ int CMainWnd::onClosing(uiWindow *, void *)
     uiQuit();
     return 1;
 }
-
-#include <openssl/bio.h>
 
 int main()
 {

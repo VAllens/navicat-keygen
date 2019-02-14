@@ -150,11 +150,10 @@ void CMainWnd::onActive(uiButton *b, void *data)
     char *lic = uiMultilineEntryText(pWnd->lic);
     if (lic == NULL || !lic[0]) return;
     // load private key
-    Cipher rsa;
-    int n = rsa.Load("navicat.pem");
-    if (n < 0) return pWnd->ErrBox("failed open pem %d", n);
+    CAutoPtr<RSA> rsa = LoadRSA();
+    if (!rsa) return pWnd->ErrBox("failed load rsa key");
     // decode base64
-    n = strlen(lic);
+    int n = static_cast<int>(strlen(lic));
     CAutoPtr<uint8_t> p = (uint8_t*)malloc(n * 2);
     {
         BIO *b64 = BIO_new(BIO_f_base64());
