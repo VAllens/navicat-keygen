@@ -145,13 +145,13 @@ BOOL CALLBACK EnumChild(HWND hWnd, LPARAM lParam)
 /*
 * 生成许可文件
 */
-HRESULT GenLic(RSA *pRSA, LPCTSTR szName, LPCTSTR szOrg, CAtlString& szLic)
+HRESULT GenLic(RSA *pRSA, const CAtlStringA& szName, const CAtlStringA& szOrg, CAtlString& szLic)
 {
     HRESULT hr = S_OK;
     CHeapPtr<BYTE> pBin;
     CHeapPtr<CHAR> pText;
 
-    DWORD nBin = szLic.GetLength() * 2;
+    DWORD nBin = szLic.GetLength() * 2 + strlen(szName) + strlen(szOrg);
     pBin.AllocateBytes(nBin);
     BOOL_CHECK(::CryptStringToBinary(szLic, szLic.GetLength(), CRYPT_STRING_BASE64, pBin, &nBin, NULL, NULL));
 
@@ -162,17 +162,17 @@ HRESULT GenLic(RSA *pRSA, LPCTSTR szName, LPCTSTR szOrg, CAtlString& szLic)
     /* parse json data */
     PSTR pCur = strstr(pText, "\"P\":\"");
     if (NULL == pCur) return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
-    nText = sprintf_s(pCur, pText + nText - pCur, "\"N\":\"%S\", \"O\":\"%S\", \"T\":%d}", szName, szOrg, time(NULL));
+    nText = sprintf_s(pCur, pText + nText - pCur, "\"N\":\"%s\", \"O\":\"%s\", \"T\":%d}", szName, szOrg, time(NULL));
  
     /* encode response data */
     nBin = RSA_private_encrypt(nText + int(pCur - pText), (PBYTE)(PSTR)pText, pBin, pRSA, RSA_PKCS1_PADDING);
-    nText = szLic.GetLength() * 2;
+    nText = nBin * 2;
     BOOL_CHECK(::CryptBinaryToString(pBin, nBin, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, szLic.GetBufferSetLength(nText), &nText));
 exit:
     return hr;
 }
 
-HRESULT ExportLic(RSA *pRSA, LPCTSTR szName, LPCTSTR szOrg, LPCTSTR szSN, HWND hWnd)
+HRESULT ExportLic(RSA *pRSA, const CAtlStringA& szName, const CAtlStringA& szOrg, LPCTSTR szSN, HWND hWnd)
 {
     // 选择许可文件路径
     TCHAR szPath[MAX_PATH] = TEXT("license_file");
@@ -186,7 +186,7 @@ HRESULT ExportLic(RSA *pRSA, LPCTSTR szName, LPCTSTR szOrg, LPCTSTR szSN, HWND h
     CHeapPtr<BYTE> pBin;
     CAtlStringA pText;
     /* create json data */
-    pText.Format("{\"K\":\"%S\", \"N\":\"%S\", \"O\":\"%S\", \"T\":%d}", szSN, szName, szOrg, time(NULL));
+    pText.Format("{\"K\":\"%S\", \"N\":\"%s\", \"O\":\"%s\", \"T\":%d}", szSN, szName, szOrg, time(NULL));
     pBin.AllocateBytes(pText.GetLength() * 2);
     DWORD nLic = RSA_private_encrypt(pText.GetLength(), (PBYTE)pText.GetString(), pBin, pRSA, RSA_PKCS1_PADDING);
 
@@ -244,7 +244,7 @@ LRESULT CMainDlg::OnActive(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
     // 生成许可文件
     if (nIndex == Navicat12)
     {
-        hr = GenLic(pRSA, szName, szOrg, szLic);
+        hr = GenLic(pRSA, szName.GetString(), szOrg.GetString(), szLic);
         if (SUCCEEDED(hr))
         {
             hr = ::EnumChildWindows(hForm, EnumChild, (LPARAM)&szLic);
@@ -252,7 +252,7 @@ LRESULT CMainDlg::OnActive(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
     }
     else if (nIndex == Navicat11)
     {
-        hr = ExportLic(pRSA, szName, szOrg, szLic, m_hWnd);
+        hr = ExportLic(pRSA, szName.GetString(), szOrg.GetString(), szLic, m_hWnd);
     }
 
     if (SUCCEEDED(hr)) return S_OK;
